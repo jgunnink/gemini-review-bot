@@ -22,6 +22,8 @@ jobs:
           cache: npm
 
       - name: Install dependencies
+        # Strict, reproducible install. The lockfile is Linux-generated to match the runner;
+        # see "Updating dependencies" in the README before regenerating it.
         run: npm ci
 
       - name: Typecheck
