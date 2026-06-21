@@ -1,0 +1,27 @@
+name: "Gemini code review"
+description: "AI code review on pull requests via the Gemini API. Posts inline comments with priority labels and suggestions."
+author: "jk"
+branding:
+  icon: "git-pull-request"
+  color: "blue"
+
+inputs:
+  gemini_api_key:
+    description: "Google AI Studio API key used to call the Gemini API. Pass a secret."
+    required: true
+  github_token:
+    description: "Token used to post review comments. Defaults to the automatic GITHUB_TOKEN."
+    required: false
+    default: ${{ github.token }}
+  model:
+    description: "Gemini model id (e.g. gemini-flash-latest). Overrides the config file."
+    required: false
+    default: ""
+  config_path:
+    description: "Path to the repo config file."
+    required: false
+    default: ".github/gemini-review.yml"
+
+runs:
+  using: "node20"
+  main: "dist/main.js"

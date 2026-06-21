@@ -1,0 +1,39 @@
+# ORG-WIDE SETUP — step 1 of 2: the shared reusable workflow.
+#
+# Put this ONCE in your organization's special `.github` repository at:
+#   .github/workflows/gemini-review.yml
+# Then every repo references it with a tiny caller (see org-caller-workflow.yml).
+#
+# The org secret GEMINI_API_KEY is read here, so individual repos never handle the key.
+name: Gemini code review (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      model:
+        description: "Gemini model id"
+        required: false
+        type: string
+        default: "gemini-flash-latest"
+    secrets:
+      GEMINI_API_KEY:
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    if: >
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       startsWith(github.event.comment.body, '/gemini-review'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jk/gemini-review-bot@v1
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          model: ${{ inputs.model }}

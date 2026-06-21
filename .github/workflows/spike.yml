@@ -1,0 +1,31 @@
+# SMOKE TEST — verify your AI Studio key + model id work before relying on the action.
+# Set a repo secret GEMINI_API_KEY, then run via "Actions > spike > Run workflow".
+name: spike
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "Gemini model id to test"
+        default: "gemini-flash-latest"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Gemini API with structured output
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MODEL: ${{ inputs.model }}
+        run: |
+          curl -sS -X POST \
+            "https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent" \
+            -H "x-goog-api-key: ${GEMINI_API_KEY}" \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "contents": [{"parts": [{"text": "Return a JSON object with a single key ok set to true."}]}],
+              "generationConfig": {"responseMimeType": "application/json"}
+            }' | tee /tmp/resp.json
+          echo
+          grep -q '"ok"' /tmp/resp.json \
+            && echo "PASS: model ${MODEL} reachable with this key" \
+            || { echo "FAIL: check key validity, model id, and free-tier quota"; exit 1; }

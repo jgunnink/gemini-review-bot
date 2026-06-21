@@ -1,0 +1,22 @@
+# ORG-WIDE SETUP — step 2 of 2: the per-repo caller.
+#
+# Drop this into EACH repo at .github/workflows/gemini-review.yml. It's the only
+# file a repo needs — all logic lives in the org's reusable workflow, and the
+# org-level GEMINI_API_KEY secret is inherited.
+#
+# Replace `your-org` with your GitHub organization name.
+name: Gemini code review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+
+jobs:
+  review:
+    uses: your-org/.github/.github/workflows/gemini-review.yml@main
+    secrets:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}   # resolves to the org secret
+    # with:
+    #   model: gemini-flash-latest

@@ -1,0 +1,26 @@
+{
+  "name": "gemini-review-bot",
+  "version": "0.1.0",
+  "description": "AI code review GitHub Action powered by the Gemini API.",
+  "license": "MIT",
+  "type": "commonjs",
+  "scripts": {
+    "build": "esbuild src/main.ts --bundle --platform=node --target=node20 --outfile=dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@actions/github": "^6.0.0",
+    "@google/genai": "^1.0.0",
+    "yaml": "^2.5.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "esbuild": "^0.23.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}
