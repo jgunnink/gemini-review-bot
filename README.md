@@ -70,10 +70,22 @@ See [PRD.md](PRD.md) and [BUILD_PLAN.md](BUILD_PLAN.md) for the full spec.
 ## Development
 
 ```bash
-npm install
+npm install        # local dev only — do NOT commit the resulting lockfile (see below)
 npm run typecheck
 npm test
 npm start          # runs src/main.ts directly on Node 24 (native TS — no build step)
+```
+
+### Updating dependencies
+
+CI and the action run on Linux with strict `npm ci`, so `package-lock.json` must be
+generated on Linux — a macOS/Windows lockfile omits Linux-only optional native bindings
+(e.g. Vitest's `unrs-resolver`) and breaks `npm ci`. After changing deps, regenerate it in a
+Linux container and commit only that lockfile:
+
+```bash
+docker run --rm -v "$PWD":/app -w /app node:24-slim \
+  bash -c "rm -rf node_modules package-lock.json && npm install"
 ```
 
 ## License

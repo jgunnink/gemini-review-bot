@@ -35,9 +35,9 @@ runs:
     - name: Install action dependencies
       shell: bash
       working-directory: ${{ github.action_path }}
-      # Runtime deps are pure JS; npm install (vs strict npm ci) avoids the cross-platform
-      # optional-native-dep lockfile mismatch that affects devDeps on Linux runners.
-      run: npm install --omit=dev --no-audit --no-fund
+      # Strict, reproducible install. package-lock.json is generated on Linux (the runner
+      # OS) so the lockfile matches — see "Updating dependencies" in the README.
+      run: npm ci --omit=dev
 
     - name: Run review
       shell: bash

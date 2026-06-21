@@ -22,9 +22,9 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        # npm install (not strict npm ci): Vitest's native bindings (unrs-resolver) aren't
-        # fully captured in the lockfile cross-platform, which breaks npm ci on Linux.
-        run: npm install --no-audit --no-fund
+        # Strict, reproducible install. The lockfile is Linux-generated to match the runner;
+        # see "Updating dependencies" in the README before regenerating it.
+        run: npm ci
 
       - name: Typecheck
         run: npm run typecheck
