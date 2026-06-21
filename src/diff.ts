@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
-import { minimatch } from "./minimatch";
-import type { Config, DiffFile } from "./types";
+import { minimatch } from "./minimatch.ts";
+import type { Config, DiffFile } from "./types.ts";
 
 interface PrFile {
   filename: string;

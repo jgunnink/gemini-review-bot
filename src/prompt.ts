@@ -1,4 +1,4 @@
-import type { Config, DiffFile } from "./types";
+import type { Config, DiffFile } from "./types.ts";
 
 /**
  * Build the review prompt. The diff is framed as untrusted DATA: the model must

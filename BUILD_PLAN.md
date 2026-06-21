@@ -4,14 +4,16 @@
 **Status:** Draft v0.3 · 2026-06-21
 
 > Calls the **Gemini API directly** (the Antigravity CLI lacks headless API-key auth).
-> Packaging is a **node20 action**. Most of the build below is **already scaffolded**.
+> Packaging is a **composite action on Node 24** (native TS, no build step). Most of the
+> build below is **already scaffolded**.
 
 ## Tech decisions (locked)
 
 | Decision | Choice | Why |
 |---|---|---|
-| Packaging | **node20 action** | No Docker build; runs `dist/main.js` directly on the runner |
-| Language | **TypeScript (Node 20)** | `@actions/core`, `@actions/github` (Octokit), zod validation |
+| Packaging | **composite action** | `npm ci` + `node src/main.ts` at run time; no committed bundle |
+| Runtime | **Node 24 native TS** | Runs `.ts` directly (type stripping); no transpile/bundle step |
+| Language | **TypeScript (ESM)** | `@actions/core`, `@actions/github` (Octokit), zod validation |
 | Model | **Gemini API** via `@google/genai` | Headless API-key auth + native `responseSchema` JSON |
 | Comment posting | Octokit Reviews API | Deterministic; harness posts, model only proposes |
 
@@ -19,9 +21,8 @@
 
 ```
 gemini-review-bot/
-├── action.yml                 # node20 action metadata (inputs/outputs)
-├── package.json / tsconfig
-├── dist/main.js               # bundled entrypoint (committed; the action runs it)
+├── action.yml                 # composite action: setup-node 24 → npm ci → node src/main.ts
+├── package.json / tsconfig    # "type": "module", nodenext, native .ts execution
 ├── src/
 │   ├── main.ts                # entrypoint: orchestrates the run
 │   ├── gemini.ts              # Gemini API call (responseSchema) + retry/backoff
@@ -52,7 +53,7 @@ gemini-review-bot/
 
 ## Milestone 2 — Core review path · ✅ scaffolded
 
-- [x] `action.yml` (node20) + TS build (`npm run build` → `dist/main.js`).
+- [x] `action.yml` (composite, Node 24) running `src/main.ts` natively (no build step).
 - [x] `diff.ts`: Octokit file fetch + default/configured ignores + `max_files`/`max_diff_bytes`.
 - [x] `prompt.ts`: system framing, untrusted-diff guard, priority rubric, optional `instructions`.
 - [x] `gemini.ts`: `generateContent` with `responseSchema`, retry/backoff.
@@ -80,9 +81,9 @@ gemini-review-bot/
 
 ## Milestone 5 — Release
 
-- [ ] `git init` + commit (incl. built `dist/main.js`).
+- [x] `git init` + commit + push (no build artifact to commit).
 - [ ] Tag `v1`; publish to GitHub Marketplace (free).
-- [ ] Version-pin guidance for adopters (`uses: jk/gemini-review-bot@v1`).
+- [ ] Version-pin guidance for adopters (`uses: jgunnink/gemini-review-bot@v1`).
 - [ ] (Optional) rename the repo folder `agy-review-bot` → `gemini-review-bot`.
 
 ## Key implementation notes

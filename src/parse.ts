@@ -1,5 +1,5 @@
 import * as core from "@actions/core";
-import { FindingSchema, ReviewOutputSchema, type Finding, type ReviewOutput } from "./types";
+import { FindingSchema, ReviewOutputSchema, type Finding, type ReviewOutput } from "./types.ts";
 
 /**
  * Validate the model's JSON output. With Gemini's responseSchema the shape is

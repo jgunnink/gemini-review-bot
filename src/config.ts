@@ -1,19 +1,26 @@
 import { readFileSync, existsSync } from "node:fs";
+import { isAbsolute, join } from "node:path";
 import * as core from "@actions/core";
 import { parse as parseYaml } from "yaml";
-import { ConfigSchema, DEFAULT_IGNORES, type Config } from "./types";
+import { ConfigSchema, DEFAULT_IGNORES, type Config } from "./types.ts";
 
 /**
  * Load `.github/gemini-review.yml` (if present), merge over defaults, and apply the
  * action-level model override. Default ignore globs always apply.
+ *
+ * The config path is resolved against the checked-out repo (GITHUB_WORKSPACE) so it
+ * works regardless of the process cwd (the composite action runs node from the action dir).
  */
 export function loadConfig(configPath: string, modelOverride: string): Config {
+  const workspace = process.env.GITHUB_WORKSPACE;
+  const resolved = isAbsolute(configPath) || !workspace ? configPath : join(workspace, configPath);
+
   let fromFile: unknown = {};
-  if (existsSync(configPath)) {
+  if (existsSync(resolved)) {
     try {
-      fromFile = parseYaml(readFileSync(configPath, "utf8")) ?? {};
+      fromFile = parseYaml(readFileSync(resolved, "utf8")) ?? {};
     } catch (e) {
-      core.warning(`Could not parse ${configPath}: ${(e as Error).message}. Using defaults.`);
+      core.warning(`Could not parse ${resolved}: ${(e as Error).message}. Using defaults.`);
     }
   }
 

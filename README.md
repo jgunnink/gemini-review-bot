@@ -73,7 +73,7 @@ See [PRD.md](PRD.md) and [BUILD_PLAN.md](BUILD_PLAN.md) for the full spec.
 npm install
 npm run typecheck
 npm test
-npm run build      # bundles to dist/main.js (committed; the action runs it directly)
+npm start          # runs src/main.ts directly on Node 24 (native TS — no build step)
 ```
 
 ## License

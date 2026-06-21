@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: jk/gemini-review-bot@v1
+      - uses: jgunnink/gemini-review-bot@v1
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           model: ${{ inputs.model }}

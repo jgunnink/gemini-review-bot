@@ -1,11 +1,11 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import { decideTrigger } from "./trigger";
-import { loadConfig } from "./config";
-import { filterDiff } from "./diff";
-import { buildPrompt } from "./prompt";
-import { runReview } from "./gemini";
-import { postReview } from "./github";
+import { decideTrigger } from "./trigger.ts";
+import { loadConfig } from "./config.ts";
+import { filterDiff } from "./diff.ts";
+import { buildPrompt } from "./prompt.ts";
+import { runReview } from "./gemini.ts";
+import { postReview } from "./github.ts";
 
 async function run(): Promise<void> {
   const decision = decideTrigger();

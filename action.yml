@@ -1,6 +1,6 @@
 name: "Gemini code review"
 description: "AI code review on pull requests via the Gemini API. Posts inline comments with priority labels and suggestions."
-author: "jk"
+author: "jgunnink"
 branding:
   icon: "git-pull-request"
   color: "blue"
@@ -22,6 +22,29 @@ inputs:
     required: false
     default: ".github/gemini-review.yml"
 
+# Composite action: Node 24 runs the TypeScript source directly (native type stripping),
+# so there is no build step and no committed bundle. Deps are installed at run time.
 runs:
-  using: "node20"
-  main: "dist/main.js"
+  using: "composite"
+  steps:
+    - name: Set up Node 24
+      uses: actions/setup-node@v4
+      with:
+        node-version: "24"
+
+    - name: Install action dependencies
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm ci --omit=dev
+
+    - name: Run review
+      shell: bash
+      # No working-directory: run from the consumer repo (GITHUB_WORKSPACE) so config
+      # paths resolve there. Node resolves node_modules from the script's own dir.
+      env:
+        INPUT_GEMINI_API_KEY: ${{ inputs.gemini_api_key }}
+        INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
+        INPUT_MODEL: ${{ inputs.model }}
+        INPUT_CONFIG_PATH: ${{ inputs.config_path }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      run: node "${{ github.action_path }}/src/main.ts"

@@ -52,7 +52,8 @@ repos); add a reusable workflow once in the org `.github` repo + a tiny caller p
 
 ## 5. Architecture
 
-Reusable **node20 GitHub Action**. No server.
+Reusable **composite GitHub Action** running on **Node 24** (native TypeScript — no build
+step, no committed bundle; deps installed via `npm ci` at run time). No server.
 
 ```
 PR event / issue_comment
@@ -189,7 +190,7 @@ private-repo scoping needs Team/Enterprise, prefer "selected repos" over "all".
 
 ## 10. MVP scope
 
-In: reusable node20 Action; auto + `/gemini-review` triggers (same-repo); Gemini API call
+In: reusable composite Action (Node 24, native TS); auto + `/gemini-review` triggers (same-repo); Gemini API call
 with responseSchema; inline comments w/ priority + suggestions (stacked); rolling summary;
 config file w/ ignores + model + limits; `gemini-flash-latest` default; failure handling;
 single-repo + org reusable-workflow setups.

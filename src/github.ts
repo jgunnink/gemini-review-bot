@@ -1,6 +1,6 @@
 import * as github from "@actions/github";
 import * as core from "@actions/core";
-import { PRIORITY_BADGE, type Finding, type DiffFile } from "./types";
+import { PRIORITY_BADGE, type Finding, type DiffFile } from "./types.ts";
 
 type Octokit = ReturnType<typeof github.getOctokit>;
 

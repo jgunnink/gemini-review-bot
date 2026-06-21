@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import { GoogleGenAI, Type } from "@google/genai";
-import { parseReview } from "./parse";
-import type { ReviewOutput } from "./types";
+import { parseReview } from "./parse.ts";
+import type { ReviewOutput } from "./types.ts";
 
 /**
  * Native structured-output schema. Gemini's JSON mode constrains the model to
