@@ -26,6 +26,12 @@ jobs:
               "generationConfig": {"responseMimeType": "application/json"}
             }' | tee /tmp/resp.json
           echo
-          grep -q '"ok"' /tmp/resp.json \
-            && echo "PASS: model ${MODEL} reachable with this key" \
-            || { echo "FAIL: check key validity, model id, and free-tier quota"; exit 1; }
+          # The model's JSON answer is an escaped string inside the API envelope, so don't
+          # grep for it directly. Assert on the envelope: no error + a finished candidate.
+          if grep -q '"error"' /tmp/resp.json; then
+            echo "FAIL: API returned an error (check key validity, model id, or quota)"; exit 1
+          elif grep -q '"finishReason"' /tmp/resp.json; then
+            echo "PASS: model ${MODEL} reachable, key valid, quota OK"
+          else
+            echo "FAIL: unexpected response shape"; exit 1
+          fi
