@@ -6,7 +6,7 @@ Assist review bot. No hosted service: it runs on your own runner with your own A
 
 - 🔎 Reviews PR diffs and posts **inline comments** with code **suggestions**.
 - 🏷️ Labels findings **🔴 Critical / 🟠 High / 🟡 Medium / 🟢 Low**.
-- ⚡ Triggers automatically on PR open/update **and** on `/gemini-review` comment.
+- ⚡ Reviews automatically when a PR is **opened**; re-review on demand with `/gemini-review`.
 - 🧩 Configurable model, ignores, and limits.
 
 ## Quick start (single repo)
