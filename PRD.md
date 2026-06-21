@@ -75,8 +75,11 @@ GitHub Actions runner (adopter-hosted, free)
 
 | Trigger | Event | Behaviour |
 |---|---|---|
-| Auto-review | `pull_request` (`opened`, `synchronize`, `reopened`) | Full review of the PR diff |
+| Auto-review | `pull_request` (`opened` only) | One review when the PR is opened |
 | On-demand | `issue_comment` (`created`) body starts with `/gemini-review` | Re-review |
+
+Deliberately **not** triggered on `synchronize` — re-reviewing every push burns quota and
+is noisy. Re-reviews after new commits are explicit, via the `/gemini-review` comment.
 
 - `issue_comment` workflows run from the **default branch** copy of the workflow and
   receive a write-scoped `GITHUB_TOKEN`. Gate command execution on

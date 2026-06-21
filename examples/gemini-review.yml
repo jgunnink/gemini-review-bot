@@ -3,7 +3,7 @@ name: Gemini code review
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened]
   issue_comment:
     types: [created]
 
