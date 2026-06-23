@@ -29,6 +29,13 @@ export const ReviewOutputSchema = z.object({
 });
 export type ReviewOutput = z.infer<typeof ReviewOutputSchema>;
 
+/** Token counts reported by the model for a single review call. */
+export interface TokenUsage {
+  input: number;
+  output: number;
+  total: number;
+}
+
 /** Merged adopter config (.github/gemini-review.yml) + defaults. */
 export const ConfigSchema = z.object({
   model: z.string().default("gemini-flash-latest"),

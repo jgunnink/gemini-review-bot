@@ -66,6 +66,7 @@ async function run(): Promise<void> {
     findings: review.findings,
     files,
     extraNote: note,
+    usage: review.usage,
   });
 }
 

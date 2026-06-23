@@ -1,6 +1,6 @@
 import * as github from "@actions/github";
 import * as core from "@actions/core";
-import { PRIORITY_BADGE, type Finding, type DiffFile } from "./types.ts";
+import { PRIORITY_BADGE, type Finding, type DiffFile, type TokenUsage } from "./types.ts";
 
 type Octokit = ReturnType<typeof github.getOctokit>;
 
@@ -17,6 +17,7 @@ interface PostArgs {
   findings: Finding[];
   files: DiffFile[];
   extraNote?: string;
+  usage?: TokenUsage;
 }
 
 /**
@@ -104,7 +105,7 @@ function renderComment(f: Finding): string {
 async function upsertSummary(
   args: PostArgs & { outOfDiff: Finding[]; postedInline: number }
 ): Promise<void> {
-  const { octokit, owner, repo, prNumber, summary, findings, outOfDiff, extraNote } = args;
+  const { octokit, owner, repo, prNumber, summary, findings, outOfDiff, extraNote, usage } = args;
 
   const counts = { critical: 0, high: 0, medium: 0, low: 0 };
   for (const f of findings) counts[f.priority]++;
@@ -118,6 +119,12 @@ async function upsertSummary(
       body += `- ${PRIORITY_BADGE[f.priority]} \`${f.file}:${f.line}\` — **${f.title}**: ${f.body}\n`;
     }
     body += `\n</details>\n`;
+  }
+  if (usage) {
+    const fmt = (n: number) => n.toLocaleString("en-US");
+    body += `\n---\n`;
+    body += `<sub>**Tokens spent** · ⬆️ Input: ${fmt(usage.input)} · ⬇️ Output: ${fmt(usage.output)} · Σ Total: ${fmt(usage.total)}`;
+    body += `<br>_Total may be higher due to thinking token counts._</sub>\n`;
   }
 
   // Rolling summary: find an existing summary comment and update it in place.
