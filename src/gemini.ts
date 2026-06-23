@@ -55,11 +55,16 @@ export async function runReview(
       });
       const text = res.text ?? "";
       if (!text.trim()) throw new Error("Empty response from Gemini.");
-      const usage: TokenUsage = {
-        input: res.usageMetadata?.promptTokenCount ?? 0,
-        output: res.usageMetadata?.candidatesTokenCount ?? 0,
-        total: res.usageMetadata?.totalTokenCount ?? 0,
-      };
+      // Only attach usage when the API actually reports it; otherwise a 0/0/0
+      // footer would misleadingly imply no tokens were spent.
+      const meta = res.usageMetadata;
+      const usage: TokenUsage | undefined = meta
+        ? {
+            input: meta.promptTokenCount ?? 0,
+            output: meta.candidatesTokenCount ?? 0,
+            total: meta.totalTokenCount ?? 0,
+          }
+        : undefined;
       return { ...parseReview(text), usage };
     } catch (e) {
       lastErr = e;
