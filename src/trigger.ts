@@ -7,6 +7,8 @@ export interface TriggerDecision {
   run: boolean;
   prNumber?: number;
   reason?: string;
+  /** Comment to acknowledge with a reaction (set for /gemini-review commands). */
+  commentId?: number;
 }
 
 /**
@@ -36,7 +38,7 @@ export function decideTrigger(): TriggerDecision {
     if (!ALLOWED_ASSOCIATIONS.has(comment.author_association)) {
       return { run: false, reason: `author_association ${comment.author_association} not allowed` };
     }
-    return { run: true, prNumber: issue.number };
+    return { run: true, prNumber: issue.number, commentId: comment.id };
   }
 
   return { run: false, reason: `unsupported event ${eventName}` };

@@ -20,6 +20,41 @@ interface PostArgs {
 }
 
 /**
+ * Acknowledge a review request with a 👀 reaction, so the requester sees the
+ * action picked up the work before the (slower) review lands. Reacts to the
+ * triggering comment when present, otherwise to the PR description itself.
+ * Best-effort: a failed reaction must not block the review.
+ */
+export async function acknowledgeRequest(args: {
+  octokit: Octokit;
+  owner: string;
+  repo: string;
+  prNumber: number;
+  commentId?: number;
+}): Promise<void> {
+  const { octokit, owner, repo, prNumber, commentId } = args;
+  try {
+    if (commentId !== undefined) {
+      await octokit.rest.reactions.createForIssueComment({
+        owner,
+        repo,
+        comment_id: commentId,
+        content: "eyes",
+      });
+    } else {
+      await octokit.rest.reactions.createForIssue({
+        owner,
+        repo,
+        issue_number: prNumber,
+        content: "eyes",
+      });
+    }
+  } catch (e) {
+    core.warning(`Could not add 👀 reaction: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
+/**
  * Post inline comments (stacked, per decision) in a single review, and create or
  * update the rolling summary comment.
  */
