@@ -34,6 +34,9 @@ const responseSchema = {
 
 const MAX_RETRIES = 3;
 
+/** Backoff before each retry, indexed by attempt (1st retry waits 10s, 2nd waits 30s). */
+const RETRY_BACKOFFS_MS = [10_000, 30_000];
+
 /** Run the review against the Gemini API and return validated findings plus token usage. */
 export async function runReview(
   prompt: string,
@@ -63,7 +66,7 @@ export async function runReview(
       const status = (e as { status?: number })?.status;
       const retryable = status === 429 || status === 503 || status === 500;
       if (!retryable || attempt === MAX_RETRIES) break;
-      const backoffMs = 2000 * attempt;
+      const backoffMs = RETRY_BACKOFFS_MS[attempt - 1] ?? RETRY_BACKOFFS_MS[RETRY_BACKOFFS_MS.length - 1];
       core.warning(`Gemini call failed (status ${status}); retry ${attempt}/${MAX_RETRIES} in ${backoffMs}ms.`);
       await sleep(backoffMs);
     }
