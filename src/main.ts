@@ -5,7 +5,7 @@ import { loadConfig } from "./config.ts";
 import { filterDiff } from "./diff.ts";
 import { buildPrompt } from "./prompt.ts";
 import { runReview } from "./gemini.ts";
-import { postReview } from "./github.ts";
+import { acknowledgeRequest, postReview } from "./github.ts";
 
 async function run(): Promise<void> {
   const decision = decideTrigger();
@@ -22,6 +22,9 @@ async function run(): Promise<void> {
   const octokit = github.getOctokit(token);
   const { owner, repo } = github.context.repo;
   const prNumber = decision.prNumber;
+
+  // Acknowledge immediately with 👀 so the requester knows we're on it.
+  await acknowledgeRequest({ octokit, owner, repo, prNumber, commentId: decision.commentId });
 
   const config = loadConfig(
     core.getInput("config_path") || ".github/gemini-review.yml",
