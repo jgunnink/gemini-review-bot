@@ -34,7 +34,7 @@ export async function acknowledgeRequest(args: {
 }): Promise<void> {
   const { octokit, owner, repo, prNumber, commentId } = args;
   try {
-    if (commentId) {
+    if (commentId !== undefined) {
       await octokit.rest.reactions.createForIssueComment({
         owner,
         repo,
@@ -50,7 +50,7 @@ export async function acknowledgeRequest(args: {
       });
     }
   } catch (e) {
-    core.warning(`Could not add 👀 reaction: ${(e as Error).message}`);
+    core.warning(`Could not add 👀 reaction: ${e instanceof Error ? e.message : String(e)}`);
   }
 }
 
