@@ -23,7 +23,7 @@ jobs:
        startsWith(github.event.comment.body, '/gemini-review'))
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
