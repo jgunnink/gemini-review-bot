@@ -40,7 +40,6 @@ Notes:
 
 ```yaml
 model: gemini-flash-latest      # default; Gemini model id
-max_files: 50                   # skip review above this many changed files
 max_diff_bytes: 400000          # skip review above this diff size
 ignore:                         # extra globs (merged with built-in defaults)
   - "docs/**"

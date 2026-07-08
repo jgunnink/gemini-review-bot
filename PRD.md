@@ -146,7 +146,6 @@ No effect on check-run status (decision: never fail the run).
 
 ```yaml
 model: gemini-flash-latest        # default
-max_files: 50                     # skip review above this; note in summary
 max_diff_bytes: 400000            # skip guard for quota safety
 ignore:                           # extra globs (merged with built-in defaults)
   - "docs/**"
@@ -176,7 +175,7 @@ private-repo scoping needs Team/Enterprise, prefer "selected repos" over "all".
 |---|---|
 | Gemini 429 / 503 / 500 | Retry with backoff; if still failing, fail step + note in summary |
 | Empty / invalid JSON response | Fail step with annotation; post no partial review |
-| Diff over `max_files`/`max_diff_bytes` | Skip inline review; summary explains the cap |
+| Diff over `max_diff_bytes` | Skip inline review; summary explains the cap |
 | Malformed individual finding | Drop it, log, continue |
 | Fork PR | Skip with notice |
 

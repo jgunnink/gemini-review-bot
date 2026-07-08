@@ -28,12 +28,6 @@ export function filterDiff(
     kept.push({ path: f.filename, patch: f.patch });
   }
 
-  if (kept.length > config.max_files) {
-    const note = `Skipped review: ${kept.length} changed files exceeds max_files=${config.max_files}.`;
-    core.warning(note);
-    return { files: [], note };
-  }
-
   const totalBytes = kept.reduce((n, f) => n + Buffer.byteLength(f.patch), 0);
   if (totalBytes > config.max_diff_bytes) {
     const note = `Skipped review: diff ${totalBytes}B exceeds max_diff_bytes=${config.max_diff_bytes}.`;

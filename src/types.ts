@@ -39,7 +39,6 @@ export interface TokenUsage {
 /** Merged adopter config (.github/gemini-review.yml) + defaults. */
 export const ConfigSchema = z.object({
   model: z.string().default("gemini-flash-latest"),
-  max_files: z.number().int().positive().default(50),
   max_diff_bytes: z.number().int().positive().default(400_000),
   ignore: z.array(z.string()).default([]),
   instructions: z.string().optional(),
