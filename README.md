@@ -36,7 +36,34 @@ Notes:
 - **Scope it:** grant the secret to *selected* repos, not "all". Fork PRs never receive org
   secrets — which aligns with this action's same-repo-only rule.
 
-## Configuration (`.github/gemini-review.yml`, optional)
+## Configuration
+
+Settings live in **two different files** — don't mix them up:
+
+1. **The workflow** (`.github/workflows/gemini-review.yml`) runs the action and passes
+   **action inputs** under `with:`.
+2. **The config file** (`.github/gemini-review.yml` — note: *not* in `workflows/`) holds
+   review settings. It's optional.
+
+### Action inputs (workflow `with:`)
+
+| Input            | Required | Description                                                          |
+| ---------------- | -------- | -------------------------------------------------------------------- |
+| `gemini_api_key` | yes      | Google AI Studio API key. Pass a secret.                             |
+| `github_token`   | no       | Token for posting comments. Defaults to the automatic `GITHUB_TOKEN`. |
+| `model`          | no       | Gemini model id. Overrides the config file.                          |
+| `instructions`   | no       | Extra review guidance. Overrides the config file.                    |
+| `config_path`    | no       | Path to the config file. Default: `.github/gemini-review.yml`.       |
+
+```yaml
+- uses: jgunnink/gemini-review-bot@v1
+  with:
+    gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+    model: gemini-flash-latest
+    instructions: "Flag any new module that ships without tests."
+```
+
+### Config file (`.github/gemini-review.yml`, optional)
 
 ```yaml
 model: gemini-flash-latest      # default; Gemini model id
@@ -46,6 +73,9 @@ ignore:                         # extra globs (merged with built-in defaults)
 instructions: |                 # optional extra review guidance
   Flag any new module that ships without tests.
 ```
+
+`model` and `instructions` can be set in either place; the action input wins when both are
+set. `max_diff_bytes` and `ignore` are config-file only.
 
 Built-in ignores (always applied): lockfiles, `dist/`, `build/`, `*.min.js`, `vendor/`,
 `*.snap`, `go.sum`.

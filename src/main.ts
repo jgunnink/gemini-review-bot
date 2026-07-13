@@ -28,7 +28,8 @@ async function run(): Promise<void> {
 
   const config = loadConfig(
     core.getInput("config_path") || ".github/gemini-review.yml",
-    core.getInput("model")
+    core.getInput("model"),
+    core.getInput("instructions")
   );
 
   const pr = await octokit.rest.pulls.get({ owner, repo, pull_number: prNumber });
