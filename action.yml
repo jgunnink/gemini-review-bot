@@ -17,6 +17,10 @@ inputs:
     description: "Gemini model id (e.g. gemini-flash-latest). Overrides the config file."
     required: false
     default: ""
+  instructions:
+    description: "Extra review guidance appended to the prompt. Overrides the config file."
+    required: false
+    default: ""
   config_path:
     description: "Path to the repo config file."
     required: false
@@ -47,6 +51,7 @@ runs:
         INPUT_GEMINI_API_KEY: ${{ inputs.gemini_api_key }}
         INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
         INPUT_MODEL: ${{ inputs.model }}
+        INPUT_INSTRUCTIONS: ${{ inputs.instructions }}
         INPUT_CONFIG_PATH: ${{ inputs.config_path }}
         GITHUB_TOKEN: ${{ inputs.github_token }}
       run: node "${{ github.action_path }}/src/main.ts"

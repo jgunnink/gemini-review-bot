@@ -20,3 +20,4 @@ jobs:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}   # resolves to the org secret
     # with:
     #   model: gemini-flash-latest
+    #   instructions: "Flag new modules that ship without tests."

@@ -30,6 +30,9 @@ RULES:
 - Use the line number from the NEW (right) side of the diff for "line".
 - Provide a concrete "suggestion" (replacement code) only when the fix is a clean single hunk.
 - Be concise and specific. Do not invent issues; if the diff is fine, return an empty findings array.
+- Never flag a version number, release tag, dependency version, action tag (e.g. actions/checkout@vN),
+  or model id as nonexistent, outdated, or "not yet released". You have no access to current release
+  information, so such claims are unverifiable — assume the author checked the version.
 - Write a short overall "summary" of the PR.
 ${extra}
 

@@ -25,4 +25,5 @@ jobs:
       - uses: jgunnink/gemini-review-bot@v1
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
-          # model: gemini-flash-latest   # optional override
+          # model: gemini-flash-latest                              # optional override
+          # instructions: "Flag new modules that ship without tests."  # optional review guidance

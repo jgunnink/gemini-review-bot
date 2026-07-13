@@ -15,6 +15,11 @@ on:
         required: false
         type: string
         default: "gemini-flash-latest"
+      instructions:
+        description: "Extra review guidance"
+        required: false
+        type: string
+        default: ""
     secrets:
       GEMINI_API_KEY:
         required: true
@@ -37,3 +42,4 @@ jobs:
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           model: ${{ inputs.model }}
+          instructions: ${{ inputs.instructions }}
