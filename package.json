@@ -1,6 +1,6 @@
 {
   "name": "gemini-review-bot",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "AI code review GitHub Action powered by the Gemini API.",
   "license": "MIT",
   "type": "module",
