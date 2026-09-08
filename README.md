@@ -68,6 +68,7 @@ Settings live in **two different files** — don't mix them up:
 ```yaml
 model: gemini-flash-latest      # default; Gemini model id
 max_diff_bytes: 400000          # skip review above this diff size
+max_findings: 10                # maximum number of review findings (default: 10)
 ignore:                         # extra globs (merged with built-in defaults)
   - "docs/**"
 instructions: |                 # optional extra review guidance
@@ -75,7 +76,7 @@ instructions: |                 # optional extra review guidance
 ```
 
 `model` and `instructions` can be set in either place; the action input wins when both are
-set. `max_diff_bytes` and `ignore` are config-file only.
+set. `max_diff_bytes`, `max_findings`, and `ignore` are config-file only.
 
 Built-in ignores (always applied): lockfiles, `dist/`, `build/`, `*.min.js`, `vendor/`,
 `*.snap`, `go.sum`.

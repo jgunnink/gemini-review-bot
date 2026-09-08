@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import { GoogleGenAI, Type } from "@google/genai";
 import { parseReview } from "./parse.ts";
-import type { ReviewOutput, TokenUsage } from "./types.ts";
+import type { ReviewOutput, ReviewPrompt, TokenUsage } from "./types.ts";
 
 /**
  * Native structured-output schema. Gemini's JSON mode constrains the model to
@@ -39,19 +39,25 @@ const RETRY_BACKOFFS_MS = [10_000, 30_000];
 
 /** Run the review against the Gemini API and return validated findings plus token usage. */
 export async function runReview(
-  prompt: string,
+  prompt: string | ReviewPrompt,
   model: string,
   apiKey: string
 ): Promise<ReviewOutput & { usage?: TokenUsage }> {
   const ai = new GoogleGenAI({ apiKey });
+  const contents = typeof prompt === "string" ? prompt : prompt.contents;
+  const systemInstruction = typeof prompt === "string" ? undefined : prompt.systemInstruction;
 
   let lastErr: unknown;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       const res = await ai.models.generateContent({
         model,
-        contents: prompt,
-        config: { responseMimeType: "application/json", responseSchema },
+        contents,
+        config: {
+          systemInstruction,
+          responseMimeType: "application/json",
+          responseSchema,
+        },
       });
       const text = res.text ?? "";
       if (!text.trim()) throw new Error("Empty response from Gemini.");
