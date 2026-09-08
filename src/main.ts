@@ -3,9 +3,9 @@ import * as github from "@actions/github";
 import { decideTrigger } from "./trigger.ts";
 import { loadConfig } from "./config.ts";
 import { filterDiff } from "./diff.ts";
-import { buildPrompt } from "./prompt.ts";
-import { runReview } from "./gemini.ts";
-import { acknowledgeRequest, postReview } from "./github.ts";
+import { buildPrompt, buildThreadPrompt } from "./prompt.ts";
+import { runReview, runThreadReply } from "./gemini.ts";
+import { acknowledgeRequest, postReview, fetchThreadContext, postThreadReply } from "./github.ts";
 
 async function run(): Promise<void> {
   const decision = decideTrigger();
@@ -24,7 +24,14 @@ async function run(): Promise<void> {
   const prNumber = decision.prNumber;
 
   // Acknowledge immediately with 👀 so the requester knows we're on it.
-  await acknowledgeRequest({ octokit, owner, repo, prNumber, commentId: decision.commentId });
+  await acknowledgeRequest({
+    octokit,
+    owner,
+    repo,
+    prNumber,
+    commentId: decision.commentId,
+    reviewCommentId: decision.reviewCommentId,
+  });
 
   const config = loadConfig(
     core.getInput("config_path") || ".github/gemini-review.yml",
@@ -33,6 +40,44 @@ async function run(): Promise<void> {
   );
 
   const pr = await octokit.rest.pulls.get({ owner, repo, pull_number: prNumber });
+
+  if (decision.type === "thread_reply" && decision.reviewCommentId) {
+    core.info(`Processing inline review comment Q&A (comment id ${decision.reviewCommentId})...`);
+    const threadCtx = await fetchThreadContext({
+      octokit,
+      owner,
+      repo,
+      prNumber,
+      reviewCommentId: decision.reviewCommentId,
+      inReplyToId: decision.inReplyToId,
+      question: decision.question ?? "Please review this code and provide feedback or suggestions.",
+    });
+
+    const threadPrompt = buildThreadPrompt({
+      filePath: threadCtx.filePath,
+      diffHunk: threadCtx.diffHunk,
+      thread: threadCtx.thread,
+      userQuestion: threadCtx.userQuestion,
+      config,
+      prTitle: pr.data.title ?? "",
+      prBody: pr.data.body ?? "",
+    });
+
+    core.info(`Calling Gemini with model ${config.model} for thread reply...`);
+    const { reply, usage } = await runThreadReply(threadPrompt, config.model, apiKey);
+
+    await postThreadReply({
+      octokit,
+      owner,
+      repo,
+      prNumber,
+      commentId: threadCtx.replyTargetCommentId,
+      reply,
+      usage,
+    });
+    core.info("Thread reply posted successfully.");
+    return;
+  }
   const prFiles = await octokit.paginate(octokit.rest.pulls.listFiles, {
     owner,
     repo,
