@@ -22,7 +22,9 @@ on:
         default: ""
     secrets:
       GEMINI_API_KEY:
-        required: true
+        required: false
+      AGENT_PLATFORM_API_KEY:
+        required: false
 
 permissions:
   contents: read
@@ -45,5 +47,6 @@ jobs:
       - uses: jgunnink/gemini-review-bot@v1
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          agent_platform_api_key: ${{ secrets.AGENT_PLATFORM_API_KEY }}
           model: ${{ inputs.model }}
           instructions: ${{ inputs.instructions }}
