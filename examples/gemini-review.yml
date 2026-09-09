@@ -4,6 +4,14 @@ name: Gemini code review
 on:
   pull_request:
     types: [opened]
+    # Only review when source code or tests change (skip lockfile/doc/config-only PRs):
+    paths:
+      - "src/**"
+      - "test/**"
+      # Or use paths-ignore to only skip package/lockfile bumps:
+      # paths-ignore:
+      #   - "package.json"
+      #   - "package-lock.json"
   issue_comment:
     types: [created]
 

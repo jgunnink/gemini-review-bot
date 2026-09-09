@@ -6,6 +6,9 @@ name: Gemini code review
 on:
   pull_request:
     types: [opened]
+    paths:
+      - "src/**"
+      - "test/**"
   issue_comment:
     types: [created]
 
