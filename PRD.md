@@ -27,11 +27,11 @@ their own model quota (free tier available).
   where a clean single-hunk fix exists.
 - Findings labelled **Critical / High / Medium / Low**.
 - Triggered automatically on PR open/update **and** on demand via `/gemini-review` comment.
+- Follow-up Q&A threads and on-demand diff line inquiries via `/gemini` or `/gemini-review` review comments.
 - Adopter chooses the model via config; sensible default that fits free-tier quota.
 
 ## 3. Non-goals (deferred to v2+)
 
-- Follow-up Q&A / conversational threads on review comments.
 - Fork-PR support (security + token-permission complexity).
 - Failing/gating the PR check run on findings.
 - Hosted GitHub App, dashboards, or any maintainer-run backend.
@@ -76,7 +76,8 @@ GitHub Actions runner (adopter-hosted, free)
 | Trigger | Event | Behaviour |
 |---|---|---|
 | Auto-review | `pull_request` (`opened` only) | One review when the PR is opened |
-| On-demand | `issue_comment` (`created`) body starts with `/gemini-review` | Re-review |
+| On-demand PR review | `issue_comment` (`created`) body starts with `/gemini-review` | Re-review the full PR |
+| Inline Q&A / line review | `pull_request_review_comment` (`created`) containing `/gemini` or `/gemini-review` | Answers thread or reviews line |
 
 Deliberately **not** triggered on `synchronize` — re-reviewing every push burns quota and
 is noisy. Re-reviews after new commits are explicit, via the `/gemini-review` comment.

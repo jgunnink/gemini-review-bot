@@ -1,6 +1,13 @@
 import * as github from "@actions/github";
 import * as core from "@actions/core";
-import { PRIORITY_BADGE, type Finding, type DiffFile, type TokenUsage } from "./types.ts";
+import {
+  PRIORITY_BADGE,
+  type Finding,
+  type DiffFile,
+  type TokenUsage,
+  type ThreadContext,
+  type ThreadMessage,
+} from "./types.ts";
 
 type Octokit = ReturnType<typeof github.getOctokit>;
 
@@ -32,10 +39,18 @@ export async function acknowledgeRequest(args: {
   repo: string;
   prNumber: number;
   commentId?: number;
+  reviewCommentId?: number;
 }): Promise<void> {
-  const { octokit, owner, repo, prNumber, commentId } = args;
+  const { octokit, owner, repo, prNumber, commentId, reviewCommentId } = args;
   try {
-    if (commentId !== undefined) {
+    if (reviewCommentId !== undefined) {
+      await octokit.rest.reactions.createForPullRequestReviewComment({
+        owner,
+        repo,
+        comment_id: reviewCommentId,
+        content: "eyes",
+      });
+    } else if (commentId !== undefined) {
       await octokit.rest.reactions.createForIssueComment({
         owner,
         repo,
@@ -142,3 +157,98 @@ async function upsertSummary(
     await octokit.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
   }
 }
+
+/**
+ * Fetch thread history and code diff context for an inline review comment.
+ */
+export async function fetchThreadContext(args: {
+  octokit: Octokit;
+  owner: string;
+  repo: string;
+  prNumber: number;
+  reviewCommentId: number;
+  inReplyToId?: number;
+  question: string;
+}): Promise<ThreadContext> {
+  const { octokit, owner, repo, prNumber, reviewCommentId, inReplyToId, question } = args;
+
+  if (inReplyToId) {
+    const allComments = await octokit.paginate(octokit.rest.pulls.listReviewComments, {
+      owner,
+      repo,
+      pull_number: prNumber,
+      per_page: 100,
+    });
+
+    const threadComments = allComments
+      .filter((c) => c.id === inReplyToId || c.in_reply_to_id === inReplyToId)
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+    const rootComment = threadComments.find((c) => c.id === inReplyToId);
+    const filePath = rootComment?.path || threadComments[0]?.path || "";
+    const diffHunk = rootComment?.diff_hunk || threadComments[0]?.diff_hunk || "";
+
+    const prior = threadComments.filter((c) => c.id !== reviewCommentId);
+    const thread: ThreadMessage[] = prior.map((c) => ({
+      author: c.user?.login ?? "user",
+      isBot:
+        c.user?.type === "Bot" ||
+        Boolean(c.user?.login?.includes("bot")) ||
+        Boolean(c.body?.includes(COMMENT_MARKER)),
+      body: c.body ?? "",
+    }));
+
+    return {
+      filePath,
+      diffHunk,
+      thread,
+      userQuestion: question,
+      replyTargetCommentId: inReplyToId,
+    };
+  }
+
+  // Brand-new review comment on a diff line
+  const comment = await octokit.rest.pulls.getReviewComment({
+    owner,
+    repo,
+    comment_id: reviewCommentId,
+  });
+
+  return {
+    filePath: comment.data.path,
+    diffHunk: comment.data.diff_hunk,
+    thread: [],
+    userQuestion: question,
+    replyTargetCommentId: reviewCommentId,
+  };
+}
+
+/**
+ * Post a conversational reply to an inline review comment thread.
+ */
+export async function postThreadReply(args: {
+  octokit: Octokit;
+  owner: string;
+  repo: string;
+  prNumber: number;
+  commentId: number;
+  reply: string;
+  usage?: TokenUsage;
+}): Promise<void> {
+  const { octokit, owner, repo, prNumber, commentId, reply, usage } = args;
+
+  let body = `${COMMENT_MARKER}\n${reply}`;
+  if (usage) {
+    const fmt = (n: number) => n.toLocaleString("en-US");
+    body += `\n\n<sub>⚡ Gemini · ⬆️ ${fmt(usage.input)} · ⬇️ ${fmt(usage.output)} tokens</sub>`;
+  }
+
+  await octokit.rest.pulls.createReplyForReviewComment({
+    owner,
+    repo,
+    pull_number: prNumber,
+    comment_id: commentId,
+    body,
+  });
+}
+
