@@ -1,6 +1,6 @@
 # gemini-review-bot
 
-AI code review for GitHub pull requests, powered by the **Gemini API**.
+AI code review for GitHub pull requests, powered by the **Gemini API** and **Google Cloud Vertex AI**.
 A free, open-source GitHub Action — a drop-in replacement for the sunsetting Gemini Code
 Assist review bot. No hosted service: it runs on your own runner with your own API key.
 
@@ -14,15 +14,17 @@ Assist review bot. No hosted service: it runs on your own runner with your own A
 
 ## Quick start (single repo)
 
-1. Create a [Google AI Studio](https://aistudio.google.com/) API key.
-2. Add it as a repository secret named `GEMINI_API_KEY`.
+1. Obtain an API key:
+   - **Google AI Studio (Gemini API):** Create an API key at [Google AI Studio](https://aistudio.google.com/) and save it as `GEMINI_API_KEY`.
+   - **Vertex AI / Agent Platform (Google Cloud):** Use an Agent Platform or Vertex AI API key and save it as `AGENT_PLATFORM_API_KEY` (recommended for standard Google Cloud postpay billing).
+2. Add your key as a repository secret (either `GEMINI_API_KEY` or `AGENT_PLATFORM_API_KEY`).
 3. (Optional) Run the **spike** workflow ([.github/workflows/spike.yml](.github/workflows/spike.yml))
    to confirm your key + model id work and you're within quota.
 4. Add `.github/workflows/gemini-review.yml` (see [examples/gemini-review.yml](examples/gemini-review.yml)).
 
 ## Org-wide setup (one key for many repos)
 
-Set `GEMINI_API_KEY` **once** as an organization secret
+Set `GEMINI_API_KEY` or `AGENT_PLATFORM_API_KEY` **once** as an organization secret
 (Org → Settings → Secrets and variables → Actions), scoped to selected repos, then:
 
 1. Add the reusable workflow to your org's `.github` repo
@@ -31,8 +33,7 @@ Set `GEMINI_API_KEY` **once** as an organization secret
    ([examples/org-caller-workflow.yml](examples/org-caller-workflow.yml)).
 
 Notes:
-- **Shared quota:** one key = one AI Studio quota bucket shared across all repos. For more
-  than a couple of active repos, use a **paid** key or split keys per team.
+- **Billing & Quota:** For AI Studio keys (`GEMINI_API_KEY`), one key = one quota bucket shared across all repos, subject to AI Studio prepaid credit balances. For organizations with multiple active repos, using Vertex AI / Agent Platform (`AGENT_PLATFORM_API_KEY`) is recommended to leverage standard Google Cloud postpay billing and avoid prepaid credit exhaustion interruptions.
 - **Plan limits:** restricting an org secret to *private* repos needs GitHub Team/Enterprise
   (public repos work on Free).
 - **Scope it:** grant the secret to *selected* repos, not "all". Fork PRs never receive org
@@ -59,16 +60,21 @@ Settings live in **two different files** — don't mix them up:
 | `config_path`            | no       | Path to the config file. Default: `.github/gemini-review.yml`.                                 |
 
 > [!NOTE]
-> Either `gemini_api_key` (or `GEMINI_API_KEY` env var) or `agent_platform_api_key` (or `AGENT_PLATFORM_API_KEY` env var) must be provided.
-> If `GEMINI_API_KEY` is set, Gemini API endpoints are used. If `AGENT_PLATFORM_API_KEY` is set instead, Vertex AI endpoints are used.
+> ### Authentication & Recent Billing Changes (Prepaid vs. Postpay)
+> Either `gemini_api_key` (or `GEMINI_API_KEY` env var) or `agent_platform_api_key` (or `AGENT_PLATFORM_API_KEY` / `AGENT_PLATFORM_KEY` env var) must be provided:
+>
+> - **Google AI Studio (`gemini_api_key`):** Connects to default Gemini API endpoints. Google AI Studio has transitioned paid tiers to a **prepaid billing model** requiring developers to purchase credits upfront or configure auto-reload. If your prepaid balance drops to zero or free-tier rate limits are reached, review requests will fail.
+> - **Vertex AI / Agent Platform (`agent_platform_api_key`):** Connects directly to Google Cloud **Vertex AI** endpoints (`vertexai: true`). This is recommended for teams that want to use standard **Google Cloud postpay billing** (monthly invoicing), existing GCP commitments, or Agent Platform keys without managing separate upfront prepaid credit balances.
+>
+> When using Vertex AI, the default model alias `gemini-flash-latest` automatically resolves to `gemini-2.5-flash`.
 
 ```yaml
-# Using Google AI Studio (default Gemini API)
+# Option A: Using Google AI Studio (default Gemini API)
 - uses: jgunnink/gemini-review-bot@v1
   with:
     gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
 
-# Or using Vertex AI endpoints
+# Option B: Using Vertex AI / Agent Platform (recommended for GCP postpay billing)
 - uses: jgunnink/gemini-review-bot@v1
   with:
     agent_platform_api_key: ${{ secrets.AGENT_PLATFORM_API_KEY }}
@@ -111,7 +117,7 @@ See [PRD.md](PRD.md) and [BUILD_PLAN.md](BUILD_PLAN.md) for the full spec.
 - **Same-repo PRs only** (fork PRs unsupported — security/token reasons).
 - Reviews the **diff** (+ PR title/body), not the whole repo. No agentic file exploration.
 - Inline comments **stack** on re-review; the summary comment updates in place.
-- Subject to your AI Studio quota (free tier is rate-limited).
+- **Quota & billing limits:** Free-tier AI Studio keys are strictly rate-limited; paid AI Studio keys require maintaining an active prepaid credit balance. Use `agent_platform_api_key` with Vertex AI if you prefer standard Google Cloud postpay billing and enterprise quotas.
 
 ## Development
 
