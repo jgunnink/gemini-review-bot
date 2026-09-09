@@ -36,12 +36,19 @@ export interface TokenUsage {
   total: number;
 }
 
+/** Structured prompt containing system instructions and user contents. */
+export interface ReviewPrompt {
+  systemInstruction: string;
+  contents: string;
+}
+
 /** Merged adopter config (.github/gemini-review.yml) + defaults. */
 export const ConfigSchema = z.object({
   model: z.string().default("gemini-flash-latest"),
   max_diff_bytes: z.number().int().positive().default(400_000),
   ignore: z.array(z.string()).default([]),
   instructions: z.string().optional(),
+  max_findings: z.number().int().positive().optional(),
 });
 export type Config = z.infer<typeof ConfigSchema>;
 
