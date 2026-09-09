@@ -8,7 +8,10 @@ branding:
 inputs:
   gemini_api_key:
     description: "Google AI Studio API key used to call the Gemini API. Pass a secret."
-    required: true
+    required: false
+  agent_platform_api_key:
+    description: "Vertex AI / Agent Platform API key used to call Vertex AI endpoints. Pass a secret."
+    required: false
   github_token:
     description: "Token used to post review comments. Defaults to the automatic GITHUB_TOKEN."
     required: false
@@ -49,6 +52,7 @@ runs:
       # paths resolve there. Node resolves node_modules from the script's own dir.
       env:
         INPUT_GEMINI_API_KEY: ${{ inputs.gemini_api_key }}
+        INPUT_AGENT_PLATFORM_API_KEY: ${{ inputs.agent_platform_api_key }}
         INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
         INPUT_MODEL: ${{ inputs.model }}
         INPUT_INSTRUCTIONS: ${{ inputs.instructions }}

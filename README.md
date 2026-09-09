@@ -49,20 +49,29 @@ Settings live in **two different files** — don't mix them up:
 
 ### Action inputs (workflow `with:`)
 
-| Input            | Required | Description                                                          |
-| ---------------- | -------- | -------------------------------------------------------------------- |
-| `gemini_api_key` | yes      | Google AI Studio API key. Pass a secret.                             |
-| `github_token`   | no       | Token for posting comments. Defaults to the automatic `GITHUB_TOKEN`. |
-| `model`          | no       | Gemini model id. Overrides the config file.                          |
-| `instructions`   | no       | Extra review guidance. Overrides the config file.                    |
-| `config_path`    | no       | Path to the config file. Default: `.github/gemini-review.yml`.       |
+| Input                    | Required | Description                                                                                    |
+| ------------------------ | -------- | ---------------------------------------------------------------------------------------------- |
+| `gemini_api_key`         | see note | Google AI Studio API key (Gemini API endpoints). Pass a secret.                                |
+| `agent_platform_api_key` | see note | Vertex AI / Agent Platform API key (Vertex AI endpoints). Pass a secret.                       |
+| `github_token`           | no       | Token for posting comments. Defaults to the automatic `GITHUB_TOKEN`.                           |
+| `model`                  | no       | Gemini model id. Overrides the config file.                                                    |
+| `instructions`           | no       | Extra review guidance. Overrides the config file.                                              |
+| `config_path`            | no       | Path to the config file. Default: `.github/gemini-review.yml`.                                 |
+
+> [!NOTE]
+> Either `gemini_api_key` (or `GEMINI_API_KEY` env var) or `agent_platform_api_key` (or `AGENT_PLATFORM_API_KEY` env var) must be provided.
+> If `GEMINI_API_KEY` is set, Gemini API endpoints are used. If `AGENT_PLATFORM_API_KEY` is set instead, Vertex AI endpoints are used.
 
 ```yaml
+# Using Google AI Studio (default Gemini API)
 - uses: jgunnink/gemini-review-bot@v1
   with:
     gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
-    model: gemini-flash-latest
-    instructions: "Flag any new module that ships without tests."
+
+# Or using Vertex AI endpoints
+- uses: jgunnink/gemini-review-bot@v1
+  with:
+    agent_platform_api_key: ${{ secrets.AGENT_PLATFORM_API_KEY }}
 ```
 
 ### Config file (`.github/gemini-review.yml`, optional)
