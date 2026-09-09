@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import { GoogleGenAI, Type } from "@google/genai";
 import { parseReview } from "./parse.ts";
-import type { ReviewOutput, TokenUsage } from "./types.ts";
+import type { ReviewOutput, ReviewPrompt, TokenUsage } from "./types.ts";
 
 /**
  * Native structured-output schema. Gemini's JSON mode constrains the model to
@@ -39,7 +39,7 @@ const RETRY_BACKOFFS_MS = [10_000, 30_000];
 
 /** Run the review against the Gemini API (or Vertex AI endpoints) and return validated findings plus token usage. */
 export async function runReview(
-  prompt: string,
+  prompt: string | ReviewPrompt,
   model: string,
   apiKey: string,
   useVertex = false
@@ -48,14 +48,20 @@ export async function runReview(
   const targetModel =
     useVertex && model === "gemini-flash-latest" ? "gemini-2.5-flash" : model;
   const ai = new GoogleGenAI({ apiKey, vertexai: useVertex });
+  const contents = typeof prompt === "string" ? prompt : prompt.contents;
+  const systemInstruction = typeof prompt === "string" ? undefined : prompt.systemInstruction;
 
   let lastErr: unknown;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       const res = await ai.models.generateContent({
         model: targetModel,
-        contents: prompt,
-        config: { responseMimeType: "application/json", responseSchema },
+        contents,
+        config: {
+          systemInstruction,
+          responseMimeType: "application/json",
+          responseSchema,
+        },
       });
       const text = res.text ?? "";
       if (!text.trim()) throw new Error("Empty response from Gemini.");
@@ -83,6 +89,49 @@ export async function runReview(
   throw new Error(`Gemini request failed: ${(lastErr as Error)?.message ?? String(lastErr)}`);
 }
 
+/** Run a conversational Q&A reply for an inline review comment using Gemini. */
+export async function runThreadReply(
+  prompt: string,
+  model: string,
+  apiKey: string,
+  useVertex = false
+): Promise<{ reply: string; usage?: TokenUsage }> {
+  const targetModel =
+    useVertex && model === "gemini-flash-latest" ? "gemini-2.5-flash" : model;
+  const ai = new GoogleGenAI({ apiKey, vertexai: useVertex });
+
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await ai.models.generateContent({
+        model: targetModel,
+        contents: prompt,
+      });
+      const text = res.text ?? "";
+      if (!text.trim()) throw new Error("Empty response from Gemini.");
+      const meta = res.usageMetadata;
+      const usage: TokenUsage | undefined = meta
+        ? {
+            input: meta.promptTokenCount ?? 0,
+            output: meta.candidatesTokenCount ?? 0,
+            total: meta.totalTokenCount ?? 0,
+          }
+        : undefined;
+      return { reply: text.trim(), usage };
+    } catch (e) {
+      lastErr = e;
+      const status = (e as { status?: number })?.status;
+      const retryable = status === 429 || status === 503 || status === 500;
+      if (!retryable || attempt === MAX_RETRIES) break;
+      const backoffMs = RETRY_BACKOFFS_MS[attempt - 1] ?? RETRY_BACKOFFS_MS[RETRY_BACKOFFS_MS.length - 1];
+      core.warning(`Gemini call failed (status ${status}); retry ${attempt}/${MAX_RETRIES} in ${backoffMs}ms.`);
+      await sleep(backoffMs);
+    }
+  }
+  throw new Error(`Gemini request failed: ${(lastErr as Error)?.message ?? String(lastErr)}`);
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
+
