@@ -5,7 +5,13 @@ import { loadConfig } from "./config.ts";
 import { filterDiff } from "./diff.ts";
 import { buildPrompt, buildThreadPrompt } from "./prompt.ts";
 import { runReview, runThreadReply } from "./gemini.ts";
-import { acknowledgeRequest, postReview, fetchThreadContext, postThreadReply } from "./github.ts";
+import {
+  acknowledgeRequest,
+  completeRequest,
+  postReview,
+  fetchThreadContext,
+  postThreadReply,
+} from "./github.ts";
 import { resolveAuth } from "./auth.ts";
 
 async function run(): Promise<void> {
@@ -36,7 +42,7 @@ async function run(): Promise<void> {
   const prNumber = decision.prNumber;
 
   // Acknowledge immediately with 👀 so the requester knows we're on it.
-  await acknowledgeRequest({
+  const reaction = await acknowledgeRequest({
     octokit,
     owner,
     repo,
@@ -93,6 +99,14 @@ async function run(): Promise<void> {
       usage,
     });
     core.info("Thread reply posted successfully.");
+    await completeRequest({
+      octokit,
+      owner,
+      repo,
+      reaction,
+      prNumber,
+      reviewCommentId: decision.reviewCommentId,
+    });
     return;
   }
   const prFiles = await octokit.paginate(octokit.rest.pulls.listFiles, {
@@ -113,6 +127,14 @@ async function run(): Promise<void> {
       summary: note ?? "No reviewable changes.",
       findings: [], files: [], extraNote: note,
     });
+    await completeRequest({
+      octokit,
+      owner,
+      repo,
+      reaction,
+      prNumber,
+      commentId: decision.commentId,
+    });
     return;
   }
 
@@ -130,6 +152,15 @@ async function run(): Promise<void> {
     files,
     extraNote: note,
     usage: review.usage,
+  });
+
+  await completeRequest({
+    octokit,
+    owner,
+    repo,
+    reaction,
+    prNumber,
+    commentId: decision.commentId,
   });
 }
 

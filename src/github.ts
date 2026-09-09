@@ -28,10 +28,17 @@ interface PostArgs {
   usage?: TokenUsage;
 }
 
+export interface ReactionRef {
+  reactionId: number;
+  type: "issue" | "issue_comment" | "pull_request_review_comment";
+  targetId: number;
+}
+
 /**
  * Acknowledge a review request with a 👀 reaction, so the requester sees the
  * action picked up the work before the (slower) review lands. Reacts to the
  * triggering comment when present, otherwise to the PR description itself.
+ * Returns reference to the reaction so it can be managed upon completion.
  * Best-effort: a failed reaction must not block the review.
  */
 export async function acknowledgeRequest(args: {
@@ -41,35 +48,146 @@ export async function acknowledgeRequest(args: {
   prNumber: number;
   commentId?: number;
   reviewCommentId?: number;
-}): Promise<void> {
+}): Promise<ReactionRef | undefined> {
   const { octokit, owner, repo, prNumber, commentId, reviewCommentId } = args;
   try {
     if (reviewCommentId !== undefined) {
-      await octokit.rest.reactions.createForPullRequestReviewComment({
+      const res = await octokit.rest.reactions.createForPullRequestReviewComment({
         owner,
         repo,
         comment_id: reviewCommentId,
         content: "eyes",
       });
+      return {
+        reactionId: res.data.id,
+        type: "pull_request_review_comment",
+        targetId: reviewCommentId,
+      };
     } else if (commentId !== undefined) {
-      await octokit.rest.reactions.createForIssueComment({
+      const res = await octokit.rest.reactions.createForIssueComment({
         owner,
         repo,
         comment_id: commentId,
         content: "eyes",
       });
+      return {
+        reactionId: res.data.id,
+        type: "issue_comment",
+        targetId: commentId,
+      };
     } else {
-      await octokit.rest.reactions.createForIssue({
+      const res = await octokit.rest.reactions.createForIssue({
         owner,
         repo,
         issue_number: prNumber,
         content: "eyes",
       });
+      return {
+        reactionId: res.data.id,
+        type: "issue",
+        targetId: prNumber,
+      };
     }
   } catch (e) {
     core.warning(`Could not add 👀 reaction: ${e instanceof Error ? e.message : String(e)}`);
+    return undefined;
   }
 }
+
+/**
+ * Complete a review request by removing the initial 👀 reaction and replacing
+ * it with a 👍 (+1) reaction.
+ * Best-effort: failed reaction updates must not block or fail the workflow.
+ */
+export async function completeRequest(args: {
+  octokit: Octokit;
+  owner: string;
+  repo: string;
+  reaction?: ReactionRef;
+  prNumber?: number;
+  commentId?: number;
+  reviewCommentId?: number;
+}): Promise<void> {
+  const { octokit, owner, repo, reaction, prNumber, commentId, reviewCommentId } = args;
+
+  // 1. Remove 👀 reaction if we have a reaction reference
+  if (reaction) {
+    try {
+      if (reaction.type === "pull_request_review_comment") {
+        await octokit.rest.reactions.deleteForPullRequestComment({
+          owner,
+          repo,
+          comment_id: reaction.targetId,
+          reaction_id: reaction.reactionId,
+        });
+      } else if (reaction.type === "issue_comment") {
+        await octokit.rest.reactions.deleteForIssueComment({
+          owner,
+          repo,
+          comment_id: reaction.targetId,
+          reaction_id: reaction.reactionId,
+        });
+      } else if (reaction.type === "issue") {
+        await octokit.rest.reactions.deleteForIssue({
+          owner,
+          repo,
+          issue_number: reaction.targetId,
+          reaction_id: reaction.reactionId,
+        });
+      }
+    } catch (e) {
+      core.warning(`Could not remove 👀 reaction: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  // 2. Add 👍 (+1) reaction
+  try {
+    const type = reaction?.type ?? (
+      reviewCommentId !== undefined
+        ? "pull_request_review_comment"
+        : commentId !== undefined
+        ? "issue_comment"
+        : prNumber !== undefined
+        ? "issue"
+        : undefined
+    );
+    const targetId = reaction?.targetId ?? (
+      reviewCommentId !== undefined
+        ? reviewCommentId
+        : commentId !== undefined
+        ? commentId
+        : prNumber
+    );
+
+    if (type && targetId !== undefined) {
+      if (type === "pull_request_review_comment") {
+        await octokit.rest.reactions.createForPullRequestReviewComment({
+          owner,
+          repo,
+          comment_id: targetId,
+          content: "+1",
+        });
+      } else if (type === "issue_comment") {
+        await octokit.rest.reactions.createForIssueComment({
+          owner,
+          repo,
+          comment_id: targetId,
+          content: "+1",
+        });
+      } else if (type === "issue") {
+        await octokit.rest.reactions.createForIssue({
+          owner,
+          repo,
+          issue_number: targetId,
+          content: "+1",
+        });
+      }
+    }
+  } catch (e) {
+    core.warning(`Could not add 👍 reaction: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
 
 interface ReviewCommentPayload {
   path: string;
