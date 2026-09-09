@@ -38,3 +38,29 @@ export function filterDiff(
   const note = ignored > 0 ? `Ignored ${ignored} file(s) via ignore globs.` : undefined;
   return { files: kept, note };
 }
+
+/**
+ * Extract all valid line numbers on the new (RIGHT) side of a unified diff patch.
+ */
+export function extractDiffLineNumbers(patch: string): Set<number> {
+  const validLines = new Set<number>();
+  let currentLine = 0;
+
+  for (const line of patch.split("\n")) {
+    const hunk = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line);
+    if (hunk) {
+      currentLine = parseInt(hunk[1], 10);
+      continue;
+    }
+    if (line.startsWith("-") || line.startsWith("\\")) {
+      continue;
+    }
+    if (currentLine > 0) {
+      validLines.add(currentLine);
+      currentLine++;
+    }
+  }
+
+  return validLines;
+}
+

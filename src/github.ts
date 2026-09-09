@@ -1,6 +1,7 @@
 import * as github from "@actions/github";
 import * as core from "@actions/core";
 import { PRIORITY_BADGE, type Finding, type DiffFile, type TokenUsage } from "./types.ts";
+import { extractDiffLineNumbers } from "./diff.ts";
 
 type Octokit = ReturnType<typeof github.getOctokit>;
 
@@ -55,26 +56,83 @@ export async function acknowledgeRequest(args: {
   }
 }
 
+interface ReviewCommentPayload {
+  path: string;
+  line: number;
+  side: "RIGHT";
+  start_line?: number;
+  start_side?: "RIGHT";
+  body: string;
+}
+
 /**
  * Post inline comments (stacked, per decision) in a single review, and create or
  * update the rolling summary comment.
  */
 export async function postReview(args: PostArgs): Promise<void> {
   const { octokit, owner, repo, prNumber, commitId, findings, files } = args;
-  const reviewablePaths = new Set(files.map((f) => f.path));
+  const diffLinesByPath = new Map<string, Set<number>>();
+  for (const f of files) {
+    diffLinesByPath.set(f.path, extractDiffLineNumbers(f.patch));
+  }
 
-  const inline: Array<{ path: string; line: number; body: string }> = [];
+  const inlineComments: Array<{
+    finding: Finding;
+    payload: ReviewCommentPayload;
+  }> = [];
   const outOfDiff: Finding[] = [];
 
   for (const f of findings) {
-    if (!reviewablePaths.has(f.file)) {
+    const validLines = diffLinesByPath.get(f.file);
+    if (!validLines) {
       outOfDiff.push(f);
       continue;
     }
-    inline.push({ path: f.file, line: f.end_line ?? f.line, body: renderComment(f) });
+
+    const startLine = f.line;
+    let endLine = f.end_line;
+
+    if (!validLines.has(startLine)) {
+      core.info(
+        `Finding for ${f.file}:${startLine} ("${f.title}") is outside diff hunks; folding into summary.`
+      );
+      outOfDiff.push(f);
+      continue;
+    }
+
+    if (endLine !== undefined && (!validLines.has(endLine) || endLine <= startLine)) {
+      endLine = undefined;
+    }
+
+    const body = renderComment(f);
+    if (endLine !== undefined && endLine > startLine) {
+      inlineComments.push({
+        finding: f,
+        payload: {
+          path: f.file,
+          line: endLine,
+          side: "RIGHT",
+          start_line: startLine,
+          start_side: "RIGHT",
+          body,
+        },
+      });
+    } else {
+      inlineComments.push({
+        finding: f,
+        payload: {
+          path: f.file,
+          line: startLine,
+          side: "RIGHT",
+          body,
+        },
+      });
+    }
   }
 
-  if (inline.length > 0) {
+  let postedCount = 0;
+
+  if (inlineComments.length > 0) {
     try {
       await octokit.rest.pulls.createReview({
         owner,
@@ -82,17 +140,34 @@ export async function postReview(args: PostArgs): Promise<void> {
         pull_number: prNumber,
         commit_id: commitId,
         event: "COMMENT",
-        comments: inline.map((c) => ({ path: c.path, line: c.line, body: c.body })),
+        comments: inlineComments.map((c) => c.payload),
       });
+      postedCount = inlineComments.length;
     } catch (e) {
-      // A bad line anchor rejects the whole review; fall back to a summary-only post.
-      core.warning(`Inline review failed (${(e as Error).message}); folding into summary.`);
-      outOfDiff.push(...findings.filter((f) => reviewablePaths.has(f.file)));
-      inline.length = 0;
+      core.warning(
+        `Batch inline review failed (${(e as Error).message}); retrying comments individually.`
+      );
+      for (const item of inlineComments) {
+        try {
+          await octokit.rest.pulls.createReviewComment({
+            owner,
+            repo,
+            pull_number: prNumber,
+            commit_id: commitId,
+            ...item.payload,
+          });
+          postedCount++;
+        } catch (indivErr) {
+          core.warning(
+            `Could not post inline comment on ${item.payload.path}:${item.payload.line} (${(indivErr as Error).message}); folding into summary.`
+          );
+          outOfDiff.push(item.finding);
+        }
+      }
     }
   }
 
-  await upsertSummary({ ...args, outOfDiff, postedInline: inline.length });
+  await upsertSummary({ ...args, outOfDiff, postedInline: postedCount });
 }
 
 function renderComment(f: Finding): string {

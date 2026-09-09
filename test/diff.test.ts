@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { filterDiff } from "../src/diff.ts";
+import { filterDiff, extractDiffLineNumbers } from "../src/diff.ts";
 import type { Config } from "../src/types.ts";
 
 vi.mock("@actions/core", () => ({
@@ -57,3 +57,45 @@ describe("filterDiff", () => {
     expect(res.note).toBeUndefined();
   });
 });
+
+describe("extractDiffLineNumbers", () => {
+  it("extracts only lines that are part of the new-side diff hunks", () => {
+    const patch = `@@ -10,3 +20,4 @@
+ context 1
+-removed
++added 1
++added 2
+ context 2`;
+
+    const validLines = extractDiffLineNumbers(patch);
+    expect(validLines.has(20)).toBe(true); // context 1
+    expect(validLines.has(21)).toBe(true); // added 1
+    expect(validLines.has(22)).toBe(true); // added 2
+    expect(validLines.has(23)).toBe(true); // context 2
+    // Unchanged lines outside the hunk are not present
+    expect(validLines.has(19)).toBe(false);
+    expect(validLines.has(24)).toBe(false);
+    expect(validLines.has(59)).toBe(false);
+  });
+
+  it("handles multi-hunk diffs with gaps between hunks", () => {
+    const patch = `@@ -1,2 +5,2 @@
+ context 1
++added 1
+@@ -10,2 +50,2 @@
+ context 2
++added 2`;
+
+    const validLines = extractDiffLineNumbers(patch);
+    expect(validLines.has(5)).toBe(true);
+    expect(validLines.has(6)).toBe(true);
+    // Gap between line 7 and 49 should be false
+    expect(validLines.has(7)).toBe(false);
+    expect(validLines.has(25)).toBe(false);
+    expect(validLines.has(49)).toBe(false);
+    // Second hunk
+    expect(validLines.has(50)).toBe(true);
+    expect(validLines.has(51)).toBe(true);
+  });
+});
+
