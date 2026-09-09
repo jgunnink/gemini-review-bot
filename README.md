@@ -98,11 +98,11 @@ Built-in ignores (always applied): lockfiles, `dist/`, `build/`, `*.min.js`, `ve
   `/gemini-review` comment, or the PR description on auto-review) → diff fetched via Octokit → filtered by ignores + size
   caps → prompt built (diff framed as untrusted data) → **Gemini API call with a
   `responseSchema`** (native JSON, no fragile parsing) → findings validated → inline comments
-  + rolling summary posted as `github-actions[bot]`.
+  + rolling summary posted as `github-actions[bot]` → 👀 reaction replaced with 👍 on completion.
 - **Inline thread Q&A / Line inquiries:** `pull_request_review_comment` containing `/gemini` or `/gemini-review`
   (or `@gemini`) → 👀 reaction added to the comment → comment thread history and diff hunk fetched →
   Gemini generates a targeted markdown response (with `suggestion` code blocks when appropriate) → posted
-  directly as a reply in the review thread.
+  directly as a reply in the review thread → 👀 reaction replaced with 👍 on completion.
 
 See [PRD.md](PRD.md) and [BUILD_PLAN.md](BUILD_PLAN.md) for the full spec.
 
