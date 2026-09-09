@@ -37,13 +37,17 @@ const MAX_RETRIES = 3;
 /** Backoff before each retry, indexed by attempt (1st retry waits 10s, 2nd waits 30s). */
 const RETRY_BACKOFFS_MS = [10_000, 30_000];
 
-/** Run the review against the Gemini API and return validated findings plus token usage. */
+/** Run the review against the Gemini API (or Vertex AI endpoints) and return validated findings plus token usage. */
 export async function runReview(
   prompt: string | ReviewPrompt,
   model: string,
-  apiKey: string
+  apiKey: string,
+  useVertex = false
 ): Promise<ReviewOutput & { usage?: TokenUsage }> {
-  const ai = new GoogleGenAI({ apiKey });
+  // 'gemini-flash-latest' is an AI Studio alias; on Vertex AI map it to 'gemini-2.5-flash'.
+  const targetModel =
+    useVertex && model === "gemini-flash-latest" ? "gemini-2.5-flash" : model;
+  const ai = new GoogleGenAI({ apiKey, vertexai: useVertex });
   const contents = typeof prompt === "string" ? prompt : prompt.contents;
   const systemInstruction = typeof prompt === "string" ? undefined : prompt.systemInstruction;
 
@@ -51,7 +55,7 @@ export async function runReview(
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       const res = await ai.models.generateContent({
-        model,
+        model: targetModel,
         contents,
         config: {
           systemInstruction,

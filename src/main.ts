@@ -6,6 +6,7 @@ import { filterDiff } from "./diff.ts";
 import { buildPrompt } from "./prompt.ts";
 import { runReview } from "./gemini.ts";
 import { acknowledgeRequest, postReview } from "./github.ts";
+import { resolveAuth } from "./auth.ts";
 
 async function run(): Promise<void> {
   const decision = decideTrigger();
@@ -15,9 +16,20 @@ async function run(): Promise<void> {
   }
 
   const token = core.getInput("github_token") || process.env.GITHUB_TOKEN || "";
-  const apiKey = core.getInput("gemini_api_key") || process.env.GEMINI_API_KEY || "";
   if (!token) throw new Error("github_token is required.");
-  if (!apiKey) throw new Error("gemini_api_key is required.");
+
+  const geminiApiKey = core.getInput("gemini_api_key") || process.env.GEMINI_API_KEY || "";
+  const agentPlatformApiKey =
+    core.getInput("agent_platform_api_key") ||
+    process.env.AGENT_PLATFORM_API_KEY ||
+    process.env.AGENT_PLATFORM_KEY ||
+    "";
+  const auth = resolveAuth(geminiApiKey, agentPlatformApiKey);
+  if (auth.useVertex) {
+    core.info("Using Vertex AI endpoints via AGENT_PLATFORM_API_KEY.");
+  } else {
+    core.info("Using Gemini API endpoints via GEMINI_API_KEY.");
+  }
 
   const octokit = github.getOctokit(token);
   const { owner, repo } = github.context.repo;
@@ -57,7 +69,7 @@ async function run(): Promise<void> {
   const prompt = buildPrompt(files, config, pr.data.title ?? "", pr.data.body ?? "");
   core.info(`Reviewing ${files.length} file(s) with model ${config.model}...`);
 
-  const review = await runReview(prompt, config.model, apiKey);
+  const review = await runReview(prompt, config.model, auth.apiKey, auth.useVertex);
   core.info(`Parsed ${review.findings.length} finding(s).`);
 
   await postReview({
