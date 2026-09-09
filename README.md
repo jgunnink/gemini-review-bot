@@ -6,7 +6,9 @@ Assist review bot. No hosted service: it runs on your own runner with your own A
 
 - 🔎 Reviews PR diffs and posts **inline comments** with code **suggestions**.
 - 🏷️ Labels findings **🔴 Critical / 🟠 High / 🟡 Medium / 🟢 Low**.
-- ⚡ Reviews automatically when a PR is **opened**; re-review on demand with `/gemini-review`.
+- 💬 **Follow-up Q&A**: reply to any review comment thread with `/gemini <question>` or `/gemini-review <question>`.
+- 🎯 **On-demand line reviews**: start a review comment on any diff line with `/gemini <question>`.
+- ⚡ Reviews automatically when a PR is **opened**; re-review the whole PR with `/gemini-review`.
 - 👀 Reacts with an **eyes** emoji the moment it picks up a request, so you know it's working.
 - 🧩 Configurable model, ignores, and limits.
 
@@ -91,19 +93,22 @@ Built-in ignores (always applied): lockfiles, `dist/`, `build/`, `*.min.js`, `ve
 `*.snap`, `go.sum`.
 
 ## How it works
-
-`pull_request` / `issue_comment` → 👀 reaction added to acknowledge the request (the
-`/gemini-review` comment, or the PR description on auto-review) → diff fetched via Octokit → filtered by ignores + size
-caps → prompt built (diff framed as untrusted data) → **Gemini API call with a
-`responseSchema`** (native JSON, no fragile parsing) → findings validated → inline comments
-+ rolling summary posted as `github-actions[bot]`.
+ 
+- **Full PR review:** `pull_request` / `issue_comment` → 👀 reaction added to acknowledge the request (the
+  `/gemini-review` comment, or the PR description on auto-review) → diff fetched via Octokit → filtered by ignores + size
+  caps → prompt built (diff framed as untrusted data) → **Gemini API call with a
+  `responseSchema`** (native JSON, no fragile parsing) → findings validated → inline comments
+  + rolling summary posted as `github-actions[bot]`.
+- **Inline thread Q&A / Line inquiries:** `pull_request_review_comment` containing `/gemini` or `/gemini-review`
+  (or `@gemini`) → 👀 reaction added to the comment → comment thread history and diff hunk fetched →
+  Gemini generates a targeted markdown response (with `suggestion` code blocks when appropriate) → posted
+  directly as a reply in the review thread.
 
 See [PRD.md](PRD.md) and [BUILD_PLAN.md](BUILD_PLAN.md) for the full spec.
 
 ## Limitations (v1)
 
 - **Same-repo PRs only** (fork PRs unsupported — security/token reasons).
-- No follow-up Q&A threads yet.
 - Reviews the **diff** (+ PR title/body), not the whole repo. No agentic file exploration.
 - Inline comments **stack** on re-review; the summary comment updates in place.
 - Subject to your AI Studio quota (free tier is rate-limited).

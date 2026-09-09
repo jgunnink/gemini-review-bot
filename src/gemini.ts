@@ -89,6 +89,49 @@ export async function runReview(
   throw new Error(`Gemini request failed: ${(lastErr as Error)?.message ?? String(lastErr)}`);
 }
 
+/** Run a conversational Q&A reply for an inline review comment using Gemini. */
+export async function runThreadReply(
+  prompt: string,
+  model: string,
+  apiKey: string,
+  useVertex = false
+): Promise<{ reply: string; usage?: TokenUsage }> {
+  const targetModel =
+    useVertex && model === "gemini-flash-latest" ? "gemini-2.5-flash" : model;
+  const ai = new GoogleGenAI({ apiKey, vertexai: useVertex });
+
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await ai.models.generateContent({
+        model: targetModel,
+        contents: prompt,
+      });
+      const text = res.text ?? "";
+      if (!text.trim()) throw new Error("Empty response from Gemini.");
+      const meta = res.usageMetadata;
+      const usage: TokenUsage | undefined = meta
+        ? {
+            input: meta.promptTokenCount ?? 0,
+            output: meta.candidatesTokenCount ?? 0,
+            total: meta.totalTokenCount ?? 0,
+          }
+        : undefined;
+      return { reply: text.trim(), usage };
+    } catch (e) {
+      lastErr = e;
+      const status = (e as { status?: number })?.status;
+      const retryable = status === 429 || status === 503 || status === 500;
+      if (!retryable || attempt === MAX_RETRIES) break;
+      const backoffMs = RETRY_BACKOFFS_MS[attempt - 1] ?? RETRY_BACKOFFS_MS[RETRY_BACKOFFS_MS.length - 1];
+      core.warning(`Gemini call failed (status ${status}); retry ${attempt}/${MAX_RETRIES} in ${backoffMs}ms.`);
+      await sleep(backoffMs);
+    }
+  }
+  throw new Error(`Gemini request failed: ${(lastErr as Error)?.message ?? String(lastErr)}`);
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
+

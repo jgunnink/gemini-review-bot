@@ -70,3 +70,20 @@ export interface DiffFile {
   path: string;
   patch: string; // unified diff hunk for this file
 }
+
+/** A single comment in an inline review thread. */
+export interface ThreadMessage {
+  author: string;
+  isBot: boolean;
+  body: string;
+}
+
+/** Thread conversation context for inline Q&A. */
+export interface ThreadContext {
+  filePath: string;
+  diffHunk: string;
+  thread: ThreadMessage[];
+  userQuestion: string;
+  replyTargetCommentId: number;
+}
+
