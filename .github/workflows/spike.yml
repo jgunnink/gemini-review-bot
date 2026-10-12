@@ -6,7 +6,7 @@ on:
     inputs:
       model:
         description: "Gemini model id to test"
-        default: "gemini-flash-latest"
+        default: "gemini-3.8-flash"
 
 jobs:
   smoke:

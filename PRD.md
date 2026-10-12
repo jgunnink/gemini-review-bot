@@ -93,7 +93,7 @@ is noisy. Re-reviews after new commits are explicit, via the `/gemini-review` co
 - Gemini API via `@google/genai`: `ai.models.generateContent({ model, contents, config })`.
 - `config.responseMimeType = "application/json"` + `config.responseSchema` constrains output
   to the findings shape (§5.3) — no fragile text parsing.
-- Auth via `GEMINI_API_KEY` (AI Studio). Model from config (`gemini-flash-latest` default).
+- Auth via `GEMINI_API_KEY` (AI Studio). Model from config (`gemini-3.8-flash` default).
 - Retry with backoff on 429/503/500 (quota/transient). Validate JSON defensively and salvage
   individual findings; a fully empty/invalid response fails the step with an annotation.
 
@@ -146,7 +146,7 @@ No effect on check-run status (decision: never fail the run).
 `.github/gemini-review.yml` (all optional):
 
 ```yaml
-model: gemini-flash-latest        # default
+model: gemini-3.8-flash        # default
 max_diff_bytes: 400000            # skip guard for quota safety
 ignore:                           # extra globs (merged with built-in defaults)
   - "docs/**"
@@ -154,7 +154,7 @@ instructions: |                   # optional extra review guidance / style guide
   Prefer composition over inheritance. Flag missing tests on new modules.
 ```
 
-- **Default model:** `gemini-flash-latest` (cheapest/fastest; fits free-tier quota).
+- **Default model:** `gemini-3.8-flash` (cheapest/fastest; fits free-tier quota).
 - Built-in default ignores always apply: lockfiles, `dist/`, `build/`, `*.min.js`,
   `vendor/`, `*.snap`, `go.sum`.
 
@@ -195,7 +195,7 @@ private-repo scoping needs Team/Enterprise, prefer "selected repos" over "all".
 
 In: reusable composite Action (Node 24, native TS); auto + `/gemini-review` triggers (same-repo); Gemini API call
 with responseSchema; inline comments w/ priority + suggestions (stacked); rolling summary;
-config file w/ ignores + model + limits; `gemini-flash-latest` default; failure handling;
+config file w/ ignores + model + limits; `gemini-3.8-flash` default; failure handling;
 single-repo + org reusable-workflow setups.
 
 Out (v2 backlog): thread Q&A, fork support, check-gating, comment dedup/resolve, custom
@@ -205,7 +205,7 @@ per-path rules, whole-repo context.
 
 - **Quota:** even AI Studio free tier is rate-limited; a busy repo (or shared org key) will
   throttle. Mitigated by Flash default + diff caps, but adopters should expect limits.
-- **Model id:** confirm `gemini-flash-latest` resolves with an AI Studio key (spike).
+- **Model id:** confirm `gemini-3.8-flash` resolves with an AI Studio key (spike).
 - **SDK surface:** verify `@google/genai` `generateContent({config:{responseSchema}})`
   against the installed version.
 - **Reviews API line anchoring:** GitHub rejects a whole review if any comment `line` isn't

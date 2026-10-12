@@ -44,9 +44,6 @@ export async function runReview(
   apiKey: string,
   useVertex = false
 ): Promise<ReviewOutput & { usage?: TokenUsage }> {
-  // 'gemini-flash-latest' is an AI Studio alias; on Vertex AI map it to 'gemini-2.5-flash'.
-  const targetModel =
-    useVertex && model === "gemini-flash-latest" ? "gemini-2.5-flash" : model;
   const ai = new GoogleGenAI({ apiKey, vertexai: useVertex });
   const contents = typeof prompt === "string" ? prompt : prompt.contents;
   const systemInstruction = typeof prompt === "string" ? undefined : prompt.systemInstruction;
@@ -55,7 +52,7 @@ export async function runReview(
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       const res = await ai.models.generateContent({
-        model: targetModel,
+        model,
         contents,
         config: {
           systemInstruction,
@@ -96,15 +93,13 @@ export async function runThreadReply(
   apiKey: string,
   useVertex = false
 ): Promise<{ reply: string; usage?: TokenUsage }> {
-  const targetModel =
-    useVertex && model === "gemini-flash-latest" ? "gemini-2.5-flash" : model;
   const ai = new GoogleGenAI({ apiKey, vertexai: useVertex });
 
   let lastErr: unknown;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       const res = await ai.models.generateContent({
-        model: targetModel,
+        model,
         contents: prompt,
       });
       const text = res.text ?? "";

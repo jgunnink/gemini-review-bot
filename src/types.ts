@@ -44,7 +44,7 @@ export interface ReviewPrompt {
 
 /** Merged adopter config (.github/gemini-review.yml) + defaults. */
 export const ConfigSchema = z.object({
-  model: z.string().default("gemini-flash-latest"),
+  model: z.string().default("gemini-3.8-flash"),
   max_diff_bytes: z.number().int().positive().default(400_000),
   ignore: z.array(z.string()).default([]),
   instructions: z.string().optional(),

@@ -25,7 +25,7 @@ describe("loadConfig", () => {
 
   it("returns defaults when the config file is missing", () => {
     const config = loadConfig("/nonexistent/gemini-review.yml", "");
-    expect(config.model).toBe("gemini-flash-latest");
+    expect(config.model).toBe("gemini-3.8-flash");
     expect(config.instructions).toBeUndefined();
     expect(config.ignore).toContain("**/package-lock.json");
   });
@@ -43,8 +43,8 @@ describe("loadConfig", () => {
 
   it("lets action inputs override the config file", () => {
     const path = writeConfig("model: gemini-pro-latest\ninstructions: From file.\n");
-    const config = loadConfig(path, "gemini-flash-latest", "From input.");
-    expect(config.model).toBe("gemini-flash-latest");
+    const config = loadConfig(path, "gemini-3.8-flash", "From input.");
+    expect(config.model).toBe("gemini-3.8-flash");
     expect(config.instructions).toBe("From input.");
   });
 

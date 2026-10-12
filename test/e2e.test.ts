@@ -18,7 +18,7 @@ describe.skipIf(!agentKey)("Live Vertex AI E2E", () => {
       },
     ];
     const config = {
-      model: "gemini-flash-latest",
+      model: "gemini-3.8-flash",
       max_diff_bytes: 400000,
       ignore: [],
     };

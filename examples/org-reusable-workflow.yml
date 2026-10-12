@@ -14,7 +14,7 @@ on:
         description: "Gemini model id"
         required: false
         type: string
-        default: "gemini-flash-latest"
+        default: "gemini-3.8-flash"
       instructions:
         description: "Extra review guidance"
         required: false

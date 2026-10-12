@@ -66,8 +66,6 @@ Settings live in **two different files** — don't mix them up:
 > - **Google AI Studio (`gemini_api_key`):** Connects to default Gemini API endpoints. Google AI Studio has transitioned paid tiers to a **prepaid billing model** requiring developers to purchase credits upfront or configure auto-reload. If your prepaid balance drops to zero or free-tier rate limits are reached, review requests will fail.
 > - **Vertex AI / Agent Platform (`agent_platform_api_key`):** Connects directly to Google Cloud **Vertex AI** endpoints (`vertexai: true`). This is recommended for teams that want to use standard **Google Cloud postpay billing** (monthly invoicing), existing GCP commitments, or Agent Platform keys without managing separate upfront prepaid credit balances.
 >
-> When using Vertex AI, the default model alias `gemini-flash-latest` automatically resolves to `gemini-2.5-flash`.
-
 ```yaml
 # Option A: Using Google AI Studio (default Gemini API)
 - uses: jgunnink/gemini-review-bot@v1
@@ -83,7 +81,7 @@ Settings live in **two different files** — don't mix them up:
 ### Config file (`.github/gemini-review.yml`, optional)
 
 ```yaml
-model: gemini-flash-latest      # default; Gemini model id
+model: gemini-3.8-flash      # default; Gemini model id
 max_diff_bytes: 400000          # skip review above this diff size
 max_findings: 10                # maximum number of review findings (default: 10)
 ignore:                         # extra globs (merged with built-in defaults)
