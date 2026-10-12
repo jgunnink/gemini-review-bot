@@ -31,7 +31,7 @@ vi.mock("@google/genai", () => {
 
 describe("runReview with Gemini and Vertex AI", () => {
   it("initializes GoogleGenAI with vertexai: false and keeps model on Gemini API", async () => {
-    const res = await runReview("prompt", "gemini-flash-latest", "gemini-key");
+    const res = await runReview("prompt", "gemini-3.8-flash", "gemini-key");
     expect(GoogleGenAI).toHaveBeenCalledWith({
       apiKey: "gemini-key",
       vertexai: false,
@@ -39,8 +39,8 @@ describe("runReview with Gemini and Vertex AI", () => {
     expect(res.summary).toBe("Looks good");
   });
 
-  it("initializes GoogleGenAI with vertexai: true and maps gemini-flash-latest to gemini-2.5-flash", async () => {
-    const res = await runReview("prompt", "gemini-flash-latest", "vertex-key", true);
+  it("initializes GoogleGenAI with vertexai: true and sends the configured model", async () => {
+    const res = await runReview("prompt", "gemini-3.8-flash", "vertex-key", true);
     expect(GoogleGenAI).toHaveBeenCalledWith({
       apiKey: "vertex-key",
       vertexai: true,

@@ -17,7 +17,7 @@ inputs:
     required: false
     default: ${{ github.token }}
   model:
-    description: "Gemini model id (e.g. gemini-flash-latest). Overrides the config file."
+    description: "Gemini model id (e.g. gemini-3.8-flash). Overrides the config file."
     required: false
     default: ""
   instructions:

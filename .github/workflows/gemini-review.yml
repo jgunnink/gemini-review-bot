@@ -37,4 +37,4 @@ jobs:
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           agent_platform_api_key: ${{ secrets.AGENT_PLATFORM_API_KEY || secrets.AGENT_PLATFORM_KEY }}
-          # model: gemini-flash-latest   # optional override
+          # model: gemini-3.8-flash   # optional override

@@ -46,7 +46,7 @@ gemini-review-bot/
 ## Milestone 1 — Spike (smoke test) · 0.5 d
 
 - [ ] Run [.github/workflows/spike.yml](.github/workflows/spike.yml) with a real
-      `GEMINI_API_KEY`: confirm the key + `gemini-flash-latest` resolve and you're in quota.
+      `GEMINI_API_KEY`: confirm the key + `gemini-3.8-flash` resolve and you're in quota.
 - [ ] Note requests consumed + latency for quota budgeting.
 
 **Exit criteria:** the spike prints a JSON response and passes.

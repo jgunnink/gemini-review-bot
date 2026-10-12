@@ -32,7 +32,7 @@ describe("extractReviewCommentQuestion", () => {
 
 describe("buildThreadPrompt", () => {
   const baseConfig: Config = {
-    model: "gemini-flash-latest",
+    model: "gemini-3.8-flash",
     max_diff_bytes: 400_000,
     ignore: [],
   };
